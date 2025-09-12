@@ -1,0 +1,45 @@
+# Git and version control
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+pipeline_outputs/
+reports/
+.env
+*.log
+error.log
+
+# Keep only necessary MLflow artifacts for the build
+# The Dockerfile will copy the specific model needed
+
+# Development and testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/
+*.md
+!README.md

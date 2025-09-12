@@ -1,0 +1,30 @@
+# KFP Components Base Image
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+# Copy package files
+COPY pyproject.toml uv.lock README.md ./
+COPY src/ ./src/
+COPY assets/ ./assets/
+
+# Install package system-wide using uv
+RUN uv pip install --system -e .
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Create mount points
+RUN mkdir -p /app/mlruns /app/pipeline_outputs
