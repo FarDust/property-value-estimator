@@ -5,6 +5,7 @@ from sklearn.pipeline import Pipeline
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
+from xgboost import XGBRegressor
 
 from property_value_estimator.core.config import TARGET_COLUMN
 
@@ -30,7 +31,24 @@ class ModelTrainer(BaseModel):
     @property
     def regressor(self):
         if not self._regressor:
-            self._regressor = neighbors.KNeighborsRegressor()
+            self._regressor = XGBRegressor(
+                objective="reg:squarederror",
+                n_estimators=4000,          
+                learning_rate=0.02,         
+                max_depth=6,               
+                max_leaves=64,              
+                grow_policy="lossguide",
+                min_child_weight=4,        
+                subsample=0.9,
+                colsample_bytree=0.9,
+                colsample_bynode=0.8,
+                reg_alpha=0.05,
+                reg_lambda=2.0,
+                gamma=0.0,
+                tree_method="hist",      
+                random_state=42,
+                n_jobs=-1
+            )
         return self._regressor
 
     def get_feature_columns(self) -> list[str]:
