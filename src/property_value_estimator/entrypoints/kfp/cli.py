@@ -7,7 +7,7 @@ from typing import Optional
 import subprocess
 
 import typer
-from kfp import compiler, local, dsl
+from kfp import compiler, local
 
 from property_value_estimator.model.pipeline import (
     property_value_estimator_pipeline,
@@ -47,13 +47,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from kfp import compiler, local
 
-from property_value_estimator.model.pipeline import (
-    property_value_estimator_pipeline,
-    get_pipeline_info,
-    get_component_info
-)
 
 
 @app.command()

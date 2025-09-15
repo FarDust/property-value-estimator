@@ -23,7 +23,7 @@ class RawHouseSales(RawBase):
     )
     
     # Property identifier (can have multiple sales)
-    id: Mapped[int] = mapped_column(Integer, nullable=False, comment="Property ID - can have multiple sales")
+    id: Mapped[str] = mapped_column(String, nullable=False, comment="Property ID - can have multiple sales")
     
     # Sale information
     date: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="Sale date")

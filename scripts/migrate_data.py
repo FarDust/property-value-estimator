@@ -23,7 +23,7 @@ app = typer.Typer(help="Migrate CSV data to database")
 
 def get_db_session():
     """Create database session."""
-    engine = create_engine(settings.db.uri)
+    engine = create_engine(settings.database.uri)
     # Don't create tables here - use Alembic for that
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return SessionLocal()
@@ -65,7 +65,7 @@ def migrate_house_sales(
             
             for _, row in batch.iterrows():
                 house_sale = RawHouseSales(
-                    id=int(row['id']),
+                    id=row['id'],
                     date=pd.to_datetime(row['date']),
                     price=float(row['price']),
                     bedrooms=int(row['bedrooms']),
@@ -208,7 +208,7 @@ def status():
         typer.echo(f"  Raw House Sales: {house_count:,} records")
         typer.echo(f"  Raw Demographics: {demo_count:,} records")
         typer.echo(f"  Raw Future Examples: {future_count:,} records")
-        typer.echo(f"  Database: {settings.db.uri}")
+        typer.echo(f"  Database: {settings.database.uri}")
         
     except Exception as e:
         typer.echo(f"❌ Error checking status: {e}")

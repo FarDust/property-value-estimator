@@ -9,7 +9,7 @@ export PATH="$PYENV_ROOT/bin:/root/.local/bin:$PATH"
 eval "$(pyenv init -)"
 
 # Start MLflow model serving (environment already prepared during build)
-exec /root/.local/bin/uv tool run mlflow models serve \
+exec uv tool run mlflow models serve \
     --model-uri "file://${MODEL_PATH}" \
     --host 0.0.0.0 \
     --port 5000 \

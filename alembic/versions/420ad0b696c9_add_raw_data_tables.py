@@ -44,7 +44,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('raw_house_sales',
-    sa.Column('id', sa.Integer(), nullable=False, comment='Property ID - can have multiple sales'),
+    sa.Column('id', sa.String(), nullable=False, comment='Property ID - can have multiple sales'),
     sa.Column('date', sa.DateTime(), nullable=False, comment='Sale date'),
     sa.Column('price', sa.Float(), nullable=False, comment='Sale price'),
     sa.Column('bedrooms', sa.Integer(), nullable=False, comment='Number of bedrooms'),
