@@ -73,3 +73,45 @@ The project uses:
 ## Model Performance
 
 Training results and model metrics are tracked in MLflow and stored in the `pipeline_outputs/` directory after each training run.
+
+## Useful Commands
+
+### MLflow UI
+To check experiment tracking, run:
+
+```fish
+mlflow ui --port 5051
+```
+Then open [http://localhost:5051](http://localhost:5051) in your browser.
+
+### Run Tests
+To run all tests using `uv`:
+
+```fish
+uv run pytest tests
+```
+
+### Docker Compose
+To build and start all services in the background:
+
+```fish
+docker compose up -d --build
+```
+
+- The FastAPI prediction service will be available at [http://localhost:8000](http://localhost:8000)
+- The MLflow model API will be available at [http://localhost:5000](http://localhost:5000)
+
+#### Main Entrypoints
+The following commands are available via `uv run` (from pyproject.toml):
+
+- `property-value-estimator-pipeline` — Kubeflow pipeline CLI
+- `property-value-estimator-api` — FastAPI prediction service
+- `property-value-estimator-model` — MLflow model server CLI
+
+Example usage:
+
+```fish
+uv run property-value-estimator-pipeline --help
+uv run property-value-estimator-api --help
+uv run property-value-estimator-model --help
+```
