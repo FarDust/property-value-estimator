@@ -1,4 +1,5 @@
 reports/*.md
+reports/predictions/
 pipeline_outputs/
 mlruns/
 
