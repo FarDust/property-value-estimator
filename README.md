@@ -36,12 +36,23 @@ cd phdata
 uv sync
 ```
 
+
 ### Training the Model
 
-```bash
-# Run the complete training pipeline
-uv run kfp-pipeline run-local
+Before training the model, you must run the following commands to set up the database and migrate data:
+
+```fish
+uv run alembic upgrade head
+uv run python scripts/migrate_data.py migrate-all
 ```
+
+Then, to train the model, run:
+
+```fish
+uv run property-value-estimator-pipeline run-docker/run-local
+```
+
+The output of the training pipeline will be saved in the `pipeline_outputs/` directory.
 
 ### Making Predictions
 
