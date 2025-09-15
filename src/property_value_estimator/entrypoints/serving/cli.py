@@ -8,17 +8,34 @@ using the latest available registered model in MLflow.
 
 import subprocess
 import sys
+import shutil
 from pathlib import Path
 from typing import Optional
 
 import mlflow
 import typer
+import os
 from mlflow.tracking import MlflowClient
+from mlflow.entities.model_registry import ModelVersion
 
 from property_value_estimator.core.settings import settings
 
 app = typer.Typer(help="MLflow Model Server CLI for Property Value Estimator")
 
+
+def get_latest_model_version() -> ModelVersion | None:
+    client = MlflowClient()
+    models = client.search_registered_models()
+    if not models:
+        typer.echo("❌ No registered models found", err=True)
+        return None
+    model = models[0]
+    versions = client.get_latest_versions(model.name, stages=["Production", "Staging", "None"])
+    if not versions:
+        typer.echo("❌ No model versions found", err=True)
+        return None
+    latest_version = max(versions, key=lambda v: int(v.version))
+    return latest_version
 
 def get_latest_model_id() -> Optional[str]:
     """
@@ -28,23 +45,12 @@ def get_latest_model_id() -> Optional[str]:
         Latest model ID in format "m-xyz", or None if no model found
     """
     try:
-        client = MlflowClient()
-        models = client.search_registered_models()
-        if not models:
-            typer.echo("❌ No registered models found", err=True)
-            return None
-        model = models[0]
-        versions = client.get_latest_versions(model.name, stages=["Production", "Staging", "None"])
-        if not versions:
-            typer.echo("❌ No model versions found", err=True)
-            return None
-        latest_version = max(versions, key=lambda v: int(v.version))
-        source_path = latest_version.source
+        version = get_latest_model_version()
         # Extract m-xxxxxx from source path
         import re
-        match = re.search(r"m-[a-f0-9]+", source_path)
+        match = re.search(r"m-[a-f0-9]+", version.source)
         if not match:
-            typer.echo(f"❌ Could not extract model artifact ID from source path: {source_path}", err=True)
+            typer.echo(f"❌ Could not extract model artifact ID from source path: {version.source}", err=True)
             return None
         model_id = match.group(0)
         typer.echo(f"🎯 Found latest model artifact ID: {model_id}")
@@ -72,7 +78,6 @@ def get_available_models(client: MlflowClient) -> list[str]:
         return []
 
 
-@app.command()
 @app.command()
 def serve(
     model_name: Optional[str] = typer.Option(
@@ -235,6 +240,87 @@ def serve(
     except subprocess.CalledProcessError as e:
         typer.echo(f"❌ MLflow server failed with exit code {e.returncode}", err=True)
         raise typer.Exit(e.returncode)
+
+@app.command()
+def copy_model(
+    target_path: str = typer.Argument(..., help="Path to copy the model to"),
+    model_name: Optional[str] = typer.Option(
+        None,
+        "--model-name",
+        "-m",
+        help="Name of the registered model to serve. If not provided, will use the configured default or first available model."
+    ),
+    tracking_uri: Optional[str] = typer.Option(
+        None,
+        "--tracking-uri",
+        help="MLflow tracking URI. If not provided, will use configured default."
+    ),
+):
+    """
+    Copy the latest available registered model to a specified path.
+    """
+    if tracking_uri:
+        mlflow.set_tracking_uri(tracking_uri)
+        typer.echo(f"Using tracking URI: {tracking_uri}")
+    else:
+        configured_uri = settings.mlflow.tracking_uri
+        if configured_uri.startswith("file://./"):
+            mlruns_path = Path(configured_uri.replace("file://./", "./")).resolve()
+            if not mlruns_path.exists():
+                typer.echo(f"❌ MLruns path does not exist: {mlruns_path}", err=True)
+                raise typer.Exit(1)
+            absolute_uri = f"file://{mlruns_path}"
+            mlflow.set_tracking_uri(absolute_uri)
+            typer.echo(f"Using tracking URI: {absolute_uri}")
+        else:
+            mlflow.set_tracking_uri(configured_uri)
+            typer.echo(f"Using tracking URI: {configured_uri}")
+    
+    # Create MLflow client
+    try:
+        client = MlflowClient()
+    except Exception as e:
+        typer.echo(f"❌ Failed to create MLflow client: {e}", err=True)
+        raise typer.Exit(1)
+    
+    # Get available models
+    available_models = get_available_models(client)
+    if not available_models:
+        typer.echo("❌ No registered models found in MLflow.", err=True)
+        raise typer.Exit(1)
+    
+    typer.echo(f"📋 Found {len(available_models)} registered model(s): {', '.join(available_models)}")
+    
+    if model_name is None:
+        configured_model_name = settings.mlflow.model_name
+        if configured_model_name in available_models:
+            model_name = configured_model_name
+            typer.echo(f"🎯 Using configured default model: {model_name}")
+        else:
+            model_name = available_models[0]
+            typer.echo(f"🎯 Using first available model: {model_name}")
+    elif model_name not in available_models:
+        typer.echo(f"❌ Model '{model_name}' not found.", err=True)
+        typer.echo(f"Available models: {', '.join(available_models)}", err=True)
+        raise typer.Exit(1)
+    else:
+        typer.echo(f"🎯 Using specified model: {model_name}")
+
+    model_id = get_latest_model_id()
+
+    if model_id is None:
+        typer.echo("❌ No model artifacts found.", err=True)
+        raise typer.Exit(1)
+    
+    model_path = None
+    for root, dirs, files in os.walk("mlruns"):
+        for d in dirs:
+            if d == model_id:
+                model_path = os.path.join(root, d, "artifacts")
+                break
+
+    shutil.copytree(model_path, target_path, dirs_exist_ok=True)
+    typer.echo(f"📦 Model copied to: {target_path}")
 
 
 @app.command()

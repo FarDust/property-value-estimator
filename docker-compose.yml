@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  business-api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile.api
+    environment:
+      - DATABASE__URI=postgresql://user:password@postgres:5432/database
+      - MODEL_SERVICE__URL=http://model-api:5000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - alembic-side-car
+      - model-api
+
+  model-api:
+    build:
+      context: .
+      dockerfile: docker/model/Dockerfile.model
+    ports:
+      - "5000:5000"
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: database
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  alembic-side-car:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile.api
+    entrypoint: ["sh", "-c"]
+    command: ["alembic upgrade head && python ./scripts/migrate_data.py migrate-all"]
+    volumes:
+      - ./scripts/:/app/scripts/
+      - ./mle-project-challenge-2/data/:/app/mle-project-challenge-2/data/
+    environment:
+      - DATABASE__URI=postgresql://user:password@postgres:5432/database
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local

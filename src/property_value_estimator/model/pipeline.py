@@ -56,7 +56,6 @@ def create_pipeline_with_custom_image(base_image: str = "python:3.10-slim"):
     from property_value_estimator.model.components.training_component import train_model_component
     from property_value_estimator.model.components.evaluation_component import evaluate_model_component
     from property_value_estimator.model.components.serving_component import serving_component
-    from property_value_estimator.model.components.feature_processor_component import feature_processor_component
     
     # Override base_image for all components if not using default
     if base_image != "python:3.10-slim":

@@ -2,7 +2,6 @@ from typing import Any
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
 from plotly.graph_objects import Figure
 from pydantic import BaseModel, Field
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
